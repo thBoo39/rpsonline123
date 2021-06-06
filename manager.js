@@ -35,6 +35,8 @@ const addUser = function (id, name, roomId) {
   // if name is blank, create a unique name
   if (!name) {
     name = createUniqueNameAmong(roomUsers);
+  } else {
+    if (name.length > 12) {name = name.slice(0, 12)};
   }
   const user = { id: id, name: name, room: room, state: NOT_READY };
   users.push(user);

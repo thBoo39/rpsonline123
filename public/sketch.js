@@ -233,6 +233,7 @@ function requestJoinRoom() {
   addToMsgBox("Wait till your buddies join the room");
   addToMsgBox("Click READY when ready");
   addToMsgBox("To chat, type a message and hit enter")
+  addToMsgBox("To leave the room, simply reload the page")
 }
 
 function requestReady() {
