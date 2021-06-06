@@ -67,7 +67,7 @@ function Room(id) {
       // Wait for other users ready
       case 2:
         e = select('#headMsg');
-        e.html(this.user + " : Waiting Users")
+        e.html(this.user + " : Wait for others")
         e = select('#roomNo-area');
         e.hide();
         e = select('#ready-area');
