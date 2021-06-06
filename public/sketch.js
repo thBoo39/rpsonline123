@@ -76,7 +76,7 @@ function Room(id) {
       // Pick your choice
       case 3:
         e = select('#headMsg');
-        e.html(this.user + " : Pick!")
+        e.html("Pick!")
         e = select('#roomNo-area');
         e.hide();
         e = select('#ready-area');
@@ -111,26 +111,43 @@ function Room(id) {
   }
 
   this.update = function () {
+    var cName = color(50, 170, 190);
     for (var i = 0; i < roomUsers.length; i++) {
       var status = roomUsers[i].status;
-      const name = roomUsers[i].name;
-      var c = color(30, 175, 30);
+      var name = roomUsers[i].name;
+      var c = color(210, 210, 40);
       if (status.slice(0, 1) === 'L') {
         c = color(175, 30, 30);
         status = status.slice(1);
+      } else if (status.slice(0, 1) === 'T') {
+        c = color(210, 210, 40);
+        status = status.slice(1);
       } else if (status.slice(0, 1) === 'W') {
+        c = color(30, 175, 30);
         status = status.slice(1);
       }
       switch (status) {
         case "Not Ready":
           c = color(175, 30, 30);
           break;
+        case "Ready":
+          c = color(30, 175, 30);
+          break;
+        case "Pick":
+          c = color(210, 210, 40);
+          break;
       }
-      const msg = name + "  :" + status;
+      name = name + "  ";
       fill(c);
       rect(0, TEXT_SIZE * (i), windowWidth, TEXT_SIZE);
-      fill(75);
-      text(msg, 0, TEXT_SIZE * (i));
+      fill(cName);
+      rect(0, TEXT_SIZE * (i), textWidth(name), TEXT_SIZE);
+      fill(30)
+      textAlign(LEFT);
+      text(name, 0, TEXT_SIZE * (i));
+      fill(30);
+      textAlign(CENTER);
+      text(status, windowWidth/2, TEXT_SIZE * (i));
     }
   }
 }
@@ -143,16 +160,25 @@ function handleSuccess(data) {
       var e = select('#label-room');
       e.html(room.name);
       room.switchTo(1);
-      addToMsgBox(`You are in ${room.name}`);
       break;
     case "user ready":
       room.switchTo(2);
       break;
     case "room hot":
+      clearMsgBox();
       room.switchTo(3);
       break;
     case "reset":
+      clearMsgBox();
       room.switchTo(1);
+      break;
+    case "tie":
+      e = select('#headMsg');
+      e.html("Continue!")
+      break;
+    case "wait":
+      e = select('#headMsg');
+      e.html("Waiting...");
       break;
     case "lost":
       room.switchTo(4);
@@ -193,6 +219,8 @@ function enterName() {
   e.show();
   e = select('#headMsg');
   e.html("Enter your room number!")
+  addToMsgBox("Enter the room number shared with your buddies.");
+  addToMsgBox("A room can be occupied up to 5 people")
   redraw();
 }
 
@@ -201,6 +229,10 @@ function requestJoinRoom() {
   const number = Number(id.value());
   console.log(`request join a room ${number}`);
   socket.emit("requestJoinRoom", room.name, number);
+  clearMsgBox();
+  addToMsgBox("Wait till your buddies join the room");
+  addToMsgBox("Click READY when ready");
+  addToMsgBox("To chat, type a message and hit enter")
 }
 
 function requestReady() {
@@ -211,16 +243,19 @@ function requestReady() {
 function requestRock() {
   console.log("rock")
   socket.emit("requestChoice", "rock");
+  addToMsgBox("Your choice is Rock");
 }
 
 function requestPaper() {
   console.log("paper")
   socket.emit("requestChoice", "paper");
+  addToMsgBox("Your choice is Paper");
 }
 
 function requestScissor() {
   console.log("scissor")
   socket.emit("requestChoice", "scissor");
+  addToMsgBox("Your choice is Scissors");
 }
 
 function requestRematch() {
@@ -285,6 +320,10 @@ function addToMsgBox(msg) {
     msg_bottom.shift();
     msg_bottom.push(msg);
   }
+}
+
+function clearMsgBox() {
+  msg_bottom = [];
 }
 
 function writeMsg() {

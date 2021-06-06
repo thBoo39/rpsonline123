@@ -11,6 +11,12 @@ const SCISSOR_LOST = 6;
 const ROCK = 14;
 const PAPER = 15;
 const SCISSOR = 16;
+const ROCK_TIE = 24;
+const PAPER_TIE = 25;
+const SCISSOR_TIE = 26;
+const ROCK_WIN = 34;
+const PAPER_WIN = 35;
+const SCISSOR_WIN = 36;
 const PICKED = 10;
 const LOST = 30;
 
@@ -84,35 +90,37 @@ const userMadeChoice = function (id, choice) {
 const judgeUsers = function (roomUsers) {
   var winner = undefined;
   var losers = [];
+  var ties = [];
   var roomState = "";
   const { rock, paper, scissor } = getCombination(roomUsers);
   if (existTie({ rock, paper, scissor })) {
-    roomState = "tie";
-    return { winner, losers, roomState };
+    ties = roomUsers.filter( user => (user.state > PICK) && (user.state != LOST))
+    return { winner, losers, ties, roomState };
   }
   if (rock && scissor) {
+    ties = roomUsers.filter(user => user.state === ROCK);
+    for (var tie of ties) { tie.state = ROCK_TIE; }
     losers = roomUsers.filter(user => user.state === SCISSOR);
-    for (loser of losers) {
-      loser.state = SCISSOR_LOST;
-    }
-  } else if (rock && paper) {
+    for (var loser of losers) { loser.state = SCISSOR_LOST; }
+  } else if (paper && rock) {
+    ties = roomUsers.filter(user => user.state === PAPER);
+    for (var tie of ties) { tie.state = PAPER_TIE; }
     losers = roomUsers.filter(user => user.state === ROCK);
-    for (loser of losers) {
-      loser.state = ROCK_LOST;
-    }
-  } else if (paper && scissor) {
+    for (var loser of losers) { loser.state = ROCK_LOST; }
+  } else if (scissor && paper) {
+    ties = roomUsers.filter(user => user.state === SCISSOR);
+    for (var tie of ties) { tie.state = SCISSOR_TIE; }
     losers = roomUsers.filter(user => user.state === PAPER);
-    for (loser of losers) {
-      loser.state = PAPER_LOST;
-    }
+    for (var loser of losers) { loser.state = PAPER_LOST; }
   }
   // count LOST users if still in the room
-  count = countLostRoomUsers(roomUsers);
-  if (losers.length + count + 1 === roomUsers.length) {
+  var lostCount = countLostRoomUsers(roomUsers);
+  if (losers.length + lostCount + 1 === roomUsers.length) {
     winner = roomUsers.find(user => (user.state > PICK) && (user.state != LOST));
     winner.state += 10;
+    roomState = "winner";
   }
-  return { winner, losers, roomState };
+  return { winner, losers, ties, roomState };
 }
 
 function existTie({ rock, paper, scissor }) {
@@ -130,7 +138,7 @@ function getCombination(roomUsers) {
   return { rock, paper, scissor };
 }
 
-function countLostRoomUsers(roomUsers){
+function countLostRoomUsers(roomUsers) {
   return (roomUsers.filter(user => user.state === LOST).length);
 }
 

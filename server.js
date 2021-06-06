@@ -7,9 +7,12 @@ const PICK = 7;
 const ROCK = 14;
 const PAPER = 15;
 const SCISSOR = 16;
-const ROCK_WIN = 24;
-const PAPER_WIN = 25;
-const SCISSOR_WIN = 26;
+const ROCK_TIE = 24;
+const PAPER_TIE = 25;
+const SCISSOR_TIE = 26;
+const ROCK_WIN = 34;
+const PAPER_WIN = 35;
+const SCISSOR_WIN = 36;
 const PICKED = 10;
 const LOST = 30;
 
@@ -107,33 +110,63 @@ function Connection(socket) {
     const roomUsers = getUsers(user.room);
     // hide users choice by replacing with Picked
     dummyUsers = createPickedState(roomUsers);
-    const stats = statusUpdate(dummyUsers);
-    toRoomUsersUpdate(user.room, stats);
+    const dummyStats = statusUpdate(dummyUsers);
+    toRoomUsersUpdate(user.room, dummyStats);
     // if all room users have made a chocie
     const count = countUsersChoice(roomUsers);
-    if (count != roomUsers.length) return;
-    const { winner, losers, roomState } = judgeUsers(roomUsers);
-    if (roomState === "tie") {
-      io.in(user.room).emit("notification", "All tie!");
-      const stats = roomUsersStatusUpdate(user.room);
-      toRoomUsersUpdate(user.room, stats);
-      setUsersPickState(roomUsers);
-    } else {
-      const stats = roomUsersStatusUpdate(user.room);
-      toRoomUsersUpdate(user.room, stats);
-      for (loser of losers) {
-        io.to(loser.id).emit("success", { id: "lost" });
-        loser.state = LOST;
-      }
-      if (typeof winner != "undefined") {
-        console.log(`Winner is ${winner.name} in ${winner.room}!`)
-        io.to(winner.id).emit("success", { id: "win" });
-        io.in(user.room).emit("notification", `Winner is ${winner.name}!`);
-        io.in(user.room).emit("success", { id: "game over" });
-      } else {
-        setUsersPickState(roomUsers);
-      }
+    if (count != roomUsers.length) {
+      socket.emit("success", {id: "wait"});
+      return;
     }
+    // There coulbe be a winner, losers, lost users
+    const { winner, losers, ties, roomState } = judgeUsers(roomUsers);
+    // if no winner, game continue
+    // losers get notified
+    // ties get notified
+    for (var loser of losers) {
+      io.to(loser.id).emit("success", { id: "lost" });
+      loser.state = LOST;
+    }
+    const stats = roomUsersStatusUpdate(user.room);
+    toRoomUsersUpdate(user.room, stats);
+    for (var tie of ties) {
+      io.to(tie.id).emit("success", { id: "tie" });
+    }
+    setUsersPickState(roomUsers);
+    if (typeof winner != "undefined") {
+      console.log(`Winner is ${winner.name} in ${winner.room}!`)
+      io.to(winner.id).emit("success", { id: "win" });
+      io.in(user.room).emit("notification", `Winner is ${winner.name}!`);
+      io.in(user.room).emit("success", { id: "game over" });
+    }
+
+
+    // if (roomState === "tie") {
+    //   io.in(user.room).emit("notification", "All tie!");
+    //   io.in(user.room).emit("success", { id: "tie" });
+    //   const stats = roomUsersStatusUpdate(user.room);
+    //   toRoomUsersUpdate(user.room, stats);
+    //   setUsersPickState(roomUsers);
+    // } else {
+    //   const stats = roomUsersStatusUpdate(user.room);
+    //   toRoomUsersUpdate(user.room, stats);
+    //   for (loser of losers) {
+    //     io.to(loser.id).emit("success", { id: "lost" });
+    //     loser.state = LOST;
+    //   }
+    //   // if tie exist
+    //   if (typeof winner === "undefined") {
+    //     for (var tie of ties) {
+    //       io.to(tie.id).emit("success", { id: "tie" });
+    //     }
+    //     setUsersPickState(roomUsers);
+    //   } else if (typeof winner != "undefined") {
+    //     console.log(`Winner is ${winner.name} in ${winner.room}!`)
+    //     io.to(winner.id).emit("success", { id: "win" });
+    //     io.in(user.room).emit("notification", `Winner is ${winner.name}!`);
+    //     io.in(user.room).emit("success", { id: "game over" });
+    //   }
+    // }
   });
 
   // Rematch request
@@ -166,11 +199,11 @@ function Connection(socket) {
     }
   });
 
-  socket.on("requestSendMessage", function(msg) {
+  socket.on("requestSendMessage", function (msg) {
     if (typeof msg === "undefined") return;
     const user = getUser(socket.id);
     if (typeof user === "undefined") return;
-    io.in(user.room).emit("notification", `${user.name} :`+msg);
+    io.in(user.room).emit("notification", `${user.name} :` + msg);
   });
 }
 
@@ -211,6 +244,15 @@ function statusUpdate(roomUsers) {
         break;
       case SCISSOR:
         status = "Scissors";
+        break;
+      case ROCK_TIE:
+        status = "TRock";
+        break;
+      case PAPER_TIE:
+        status = "TPaper";
+        break;
+      case SCISSOR_TIE:
+        status = "TScissors";
         break;
       case ROCK_WIN:
         status = "WRock";
