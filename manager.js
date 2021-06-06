@@ -1,5 +1,5 @@
 const MAX_OCCUPANTS = 5;
-const MAX_ROOMS = 1000;
+const MAX_ROOMS = 99999;
 
 var users = [];
 const NOT_READY = 0;

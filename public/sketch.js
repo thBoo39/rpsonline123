@@ -220,7 +220,10 @@ function enterName() {
   e = select('#headMsg');
   e.html("Enter your room number!")
   addToMsgBox("Enter the room number shared with your buddies.");
-  addToMsgBox("A room can be occupied up to 5 people")
+  addToMsgBox("A room can be occupied up to 5 people");
+  addToMsgBox("Room can be 1 - 99999");
+  addToMsgBox("A stranger can be in the room!");
+  addToMsgBox("To chat, type a message and hit enter");
   redraw();
 }
 
@@ -232,8 +235,7 @@ function requestJoinRoom() {
   clearMsgBox();
   addToMsgBox("Wait till your buddies join the room");
   addToMsgBox("Click READY when ready");
-  addToMsgBox("To chat, type a message and hit enter")
-  addToMsgBox("To leave the room, simply reload the page")
+  addToMsgBox("To leave the room, simply reload the page");
 }
 
 function requestReady() {
