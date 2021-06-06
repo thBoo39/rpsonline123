@@ -1,0 +1,195 @@
+const MAX_OCCUPANTS = 5;
+const MAX_ROOMS = 1000;
+
+var users = [];
+const NOT_READY = 0;
+const READY = 1;
+const PICK = 7;
+const ROCK_LOST = 4;
+const PAPER_LOST = 5;
+const SCISSOR_LOST = 6;
+const ROCK = 14;
+const PAPER = 15;
+const SCISSOR = 16;
+const PICKED = 10;
+const LOST = 30;
+
+const addUser = function (id, name, roomId) {
+  // check client side input is valid and does not exceed MAX room numbers
+  if (!isValidRoomId(roomId)) return { err: "invalid room id" };
+  if (existingUser(id)) return { err: "existing user" };
+  const room = "Room" + roomId;
+  const roomUsers = users.filter(x => x.room === room);
+  if (roomUsers.length + 1 > MAX_OCCUPANTS) return { err: "room occupied" };
+  // if room users exist, and already fight in progress
+  if (roomUsers.length > 0) {
+    if (roomUsers[0].state > 1) return { err: "Locked" };
+  }
+  if (!isNameUniqueAmong(name, roomUsers)) return { err: "name taken" };
+  // if name is blank, create a unique name
+  if (!name) {
+    name = createUniqueNameAmong(roomUsers);
+  }
+  const user = { id: id, name: name, room: room, state: NOT_READY };
+  users.push(user);
+  return { user };
+}
+
+const getUser = function (id) {
+  return (users.find(user => user.id === id));
+}
+
+const getUsers = function (room) {
+  return (users.filter(user => user.room === room));
+}
+
+const removeUser = function (id) {
+  const index = users.findIndex(user => user.id === id);
+  if (index > -1) {
+    return (users.splice(index, 1)[0]);
+  }
+  return -1;
+}
+
+const setUserReady = function (id) {
+  const user = getUser(id);
+  if (user.state > READY) return { roomState: "Locked" };
+  const roomUsers = getUsers(user.room);
+  var roomState = "";
+  if (roomUsers.length == 1) return { roomState: "alone" };
+  if (user.state === READY) return { roomState: 'no state change' };
+  user.state = READY;
+  // if all users are ready, room is hot
+  const readyCount = roomUsers.filter(user => user.state === READY).length;
+  const roomUsersCount = roomUsers.length;
+  if (readyCount === roomUsersCount) {
+    roomState = 'hot';
+  } else {
+    roomState = 'cold';
+  }
+  return { user, roomState };
+}
+
+const userMadeChoice = function (id, choice) {
+  const user = getUser(id);
+  var err = "";
+  if (user.state != choice) {
+    user.state = choice;
+  } else {
+    err = 'no state change';
+  }
+  return { user, err };
+}
+
+const judgeUsers = function (roomUsers) {
+  var winner = undefined;
+  var losers = [];
+  var roomState = "";
+  const { rock, paper, scissor } = getCombination(roomUsers);
+  if (existTie({ rock, paper, scissor })) {
+    roomState = "tie";
+    return { winner, losers, roomState };
+  }
+  if (rock && scissor) {
+    losers = roomUsers.filter(user => user.state === SCISSOR);
+    for (loser of losers) {
+      loser.state = SCISSOR_LOST;
+    }
+  } else if (rock && paper) {
+    losers = roomUsers.filter(user => user.state === ROCK);
+    for (loser of losers) {
+      loser.state = ROCK_LOST;
+    }
+  } else if (paper && scissor) {
+    losers = roomUsers.filter(user => user.state === PAPER);
+    for (loser of losers) {
+      loser.state = PAPER_LOST;
+    }
+  }
+  // count LOST users if still in the room
+  count = countLostRoomUsers(roomUsers);
+  if (losers.length + count + 1 === roomUsers.length) {
+    winner = roomUsers.find(user => (user.state > PICK) && (user.state != LOST));
+    winner.state += 10;
+  }
+  return { winner, losers, roomState };
+}
+
+function existTie({ rock, paper, scissor }) {
+  if (rock && paper && scissor) return true;
+  if (rock && !paper && !scissor) return true;
+  if (!rock && paper && !scissor) return true;
+  if (!rock && !paper && scissor) return true;
+  return false;
+}
+
+function getCombination(roomUsers) {
+  var rock = (typeof (roomUsers.find(user => user.state === ROCK)) != "undefined") ? true : false;
+  var paper = (typeof (roomUsers.find(user => user.state === PAPER)) != "undefined") ? true : false;
+  var scissor = (typeof (roomUsers.find(user => user.state === SCISSOR)) != "undefined") ? true : false;
+  return { rock, paper, scissor };
+}
+
+function countLostRoomUsers(roomUsers){
+  return (roomUsers.filter(user => user.state === LOST).length);
+}
+
+const countUsersChoice = function (roomUsers) {
+  var count = 0;
+  for (user of roomUsers) {
+    if (user.state > PICK) count += 1;
+  }
+  return count;
+}
+
+const resetRoomUsersState = function (room) {
+  setRoomUsersState(room, NOT_READY);
+  return;
+}
+
+function setRoomUsersState(room, state) {
+  const roomUsers = getUsers(room);
+  for (var user of roomUsers) {
+    user.state = state;
+  }
+}
+
+function isValidRoomId(id) {
+  if (!isNumber(id)) return false;
+  return (id > 0 && id < MAX_ROOMS);
+}
+
+function existingUser(id) {
+  const user = users.find(user => user.id === id);
+  return (user);
+}
+
+function isNameUniqueAmong(name, roomUsers) {
+  if (typeof roomUsers.find(user => user.name === name) === "undefined") {
+    return true;
+  }
+  return false;
+}
+
+function createUniqueNameAmong(roomUsers) {
+  var pool = [...Array(MAX_OCCUPANTS).keys()];
+  var index = Math.floor(Math.random() * pool.length)
+  var name = "USER " + pool[index];
+  while (!isNameUniqueAmong(name, roomUsers)) {
+    pool.splice(index, 1);
+    index = Math.floor(Math.random() * pool.length)
+    name = "USER " + pool[index];
+  }
+  return name;
+}
+// utility
+function isNumber(value) {
+  return (typeof value === 'number' && isFinite(value));
+}
+
+
+module.exports = {
+  addUser, getUser, removeUser, getUsers,
+  setUserReady, resetRoomUsersState, userMadeChoice,
+  judgeUsers, countUsersChoice
+};
