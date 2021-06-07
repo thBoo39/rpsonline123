@@ -31,7 +31,9 @@ const addUser = function (id, name, roomId) {
   if (roomUsers.length > 0) {
     if (roomUsers[0].state > 1) return { err: "Locked" };
   }
-  if (!isNameUniqueAmong(name, roomUsers)) return { err: "name taken" };
+  if (!isNameUniqueAmong(name, roomUsers)) {
+    return { err: "name taken" };
+  }
   // if name is blank, create a unique name
   if (!name) {
     name = createUniqueNameAmong(roomUsers);

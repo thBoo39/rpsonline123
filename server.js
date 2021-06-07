@@ -63,7 +63,7 @@ function Connection(socket) {
           break;
         case "name taken":
           console.log("name taken");
-          socket.emit("error", "Choose a different name");
+          socket.emit("error", "name taken");
       }
     } else {
       socket.join(user.room);

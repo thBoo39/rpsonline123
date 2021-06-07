@@ -337,6 +337,8 @@ function handleError(id) {
     case "Locked":
       msg = 'Rock Paper Scissors on Progress!';
       break;
+    case "name taken":
+      msg = "Your name is already taken.";
   }
   addToMsgBox(msg);
   redraw();
