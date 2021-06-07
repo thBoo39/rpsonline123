@@ -252,7 +252,7 @@ function enterName() {
   clearMsgBox();
   addToMsgBox("Enter the room number shared with your buddies.");
   addToMsgBox("Note a stranger can be in the room!");
-  addToMsgBox("To chat, type a message and hit enter");
+  addToMsgBox("To leave the room, simply reload the page");
   redraw();
 }
 
@@ -264,7 +264,7 @@ function requestJoinRoom() {
   clearMsgBox();
   addToMsgBox("Wait till your buddies join the room");
   addToMsgBox("Click READY when ready");
-  addToMsgBox("To leave the room, simply reload the page");
+  addToMsgBox("To chat, type a message and hit enter");
 }
 
 function requestReady() {
