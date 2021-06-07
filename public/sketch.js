@@ -33,6 +33,11 @@ function setup() {
   canvas_bottom.textSize(SEND_TEXT_SIZE);
   canvas_bottom.textAlign(LEFT, TOP);
   room = new Room();
+  addToMsgBox("Welcome to Rock Paper Scissors online!");
+  addToMsgBox("Human vs Human up to 5 people");
+  addToMsgBox("Have the shared room number 1 - 99999 ready!")
+  addToMsgBox("")
+  addToMsgBox("Enjoy!")
   noLoop();
 }
 
@@ -238,10 +243,9 @@ function enterName() {
   e.show();
   e = select('#headMsg');
   e.html("Enter your room number!")
+  clearMsgBox();
   addToMsgBox("Enter the room number shared with your buddies.");
-  addToMsgBox("A room can be occupied up to 5 people");
-  addToMsgBox("Room can be 1 - 99999");
-  addToMsgBox("A stranger can be in the room!");
+  addToMsgBox("Note a stranger can be in the room!");
   addToMsgBox("To chat, type a message and hit enter");
   redraw();
 }
@@ -349,7 +353,7 @@ function clearMsgBox() {
 }
 
 function writeMsg() {
-  const c = color(100, 200, 150);
+  const c = color(150, 230, 140);
   canvas_bottom.background(c);
   canvas_bottom.fill(0);
   for (var i = 0; i < msg_bottom.length; i++) {
