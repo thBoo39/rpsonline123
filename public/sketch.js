@@ -184,6 +184,9 @@ function handleSuccess(data) {
     case "user ready":
       room.switchTo(2);
       break;
+    case "choice":
+      room.status = data.pick.toUpperCase();
+      break;
     case "room hot":
       clearMsgBox();
       room.switchTo(3);

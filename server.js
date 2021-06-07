@@ -107,11 +107,22 @@ function Connection(socket) {
     const { user, err } = userMadeChoice(socket.id, choice);
     if (err === 'no state change') return;
     socket.in(user.room).emit('notification', `${user.name} made a choice`);
+    socket.emit("success", {id: "choice", pick: pick});
     const roomUsers = getUsers(user.room);
     // hide users choice by replacing with Picked
     dummyUsers = createPickedState(roomUsers);
     const dummyStats = statusUpdate(dummyUsers);
-    toRoomUsersUpdate(user.room, dummyStats);
+    var msgData = { id: "user update", users: dummyStats };
+    socket.in(user.room).emit("success", msgData);
+    // for those requested, show its own choice
+    for (var dUser of dummyStats) {
+      if (dUser.name === user.name) {
+        var { name, status, countWin} = setStatus(user)
+        dUser.status = status;
+      }
+    }
+    msgData = { id: "user update", users: dummyStats };
+    socket.emit("success", msgData);
     // if all room users have made a chocie
     const count = countUsersChoice(roomUsers);
     if (count != roomUsers.length) {
@@ -123,15 +134,15 @@ function Connection(socket) {
     // if no winner, game continue
     // losers get notified
     // ties get notified
-    for (var loser of losers) {
-      io.to(loser.id).emit("success", { id: "lost" });
-      loser.state = LOST;
-    }
     if (typeof winner != "undefined") {
       winner.countWin += 1;
     }
     const stats = roomUsersStatusUpdate(user.room);
     toRoomUsersUpdate(user.room, stats);
+    for (var loser of losers) {
+      io.to(loser.id).emit("success", { id: "lost" });
+      loser.state = LOST;
+    }
     for (var tie of ties) {
       io.to(tie.id).emit("success", { id: "tie" });
     }
@@ -192,64 +203,69 @@ function roomUsersStatusUpdate(room) {
 function statusUpdate(roomUsers) {
   var usersStats = [];
   for (var user of roomUsers) {
-    var countWin = user.countWin;
-    var name = user.name;
-    var status = "";
-    switch (user.state) {
-      case NOT_READY:
-        status = "Not Ready";
-        break;
-      case READY:
-        status = "Ready";
-        break;
-      case ROCK_LOST:
-        status = "LRock";
-        break;
-      case PAPER_LOST:
-        status = "LPaper";
-        break;
-      case SCISSOR_LOST:
-        status = "LScissors";
-        break;
-      case PICK:
-        status = "Pick";
-        break;
-      case ROCK:
-        status = "Rock";
-        break;
-      case PAPER:
-        status = "Paper";
-        break;
-      case SCISSOR:
-        status = "Scissors";
-        break;
-      case ROCK_TIE:
-        status = "TRock";
-        break;
-      case PAPER_TIE:
-        status = "TPaper";
-        break;
-      case SCISSOR_TIE:
-        status = "TScissors";
-        break;
-      case ROCK_WIN:
-        status = "WRock";
-        break;
-      case PAPER_WIN:
-        status = "WPaper";
-        break;
-      case SCISSOR_WIN:
-        status = "WScissors";
-        break;
-      case PICKED:
-        status = "Picked";
-        break;
-      case LOST:
-        status = "LLOST";
-    }
+    var { name, status, countWin} = setStatus(user);
     usersStats.push({ name: name, status: status, countWin: countWin });
   }
   return usersStats;
+}
+
+function setStatus(user) {
+  var countWin = user.countWin;
+  var name = user.name;
+  var status = "";
+  switch (user.state) {
+    case NOT_READY:
+      status = "Not Ready";
+      break;
+    case READY:
+      status = "Ready";
+      break;
+    case ROCK_LOST:
+      status = "LRock";
+      break;
+    case PAPER_LOST:
+      status = "LPaper";
+      break;
+    case SCISSOR_LOST:
+      status = "LScissors";
+      break;
+    case PICK:
+      status = "Pick";
+      break;
+    case ROCK:
+      status = "Rock";
+      break;
+    case PAPER:
+      status = "Paper";
+      break;
+    case SCISSOR:
+      status = "Scissors";
+      break;
+    case ROCK_TIE:
+      status = "TRock";
+      break;
+    case PAPER_TIE:
+      status = "TPaper";
+      break;
+    case SCISSOR_TIE:
+      status = "TScissors";
+      break;
+    case ROCK_WIN:
+      status = "WRock";
+      break;
+    case PAPER_WIN:
+      status = "WPaper";
+      break;
+    case SCISSOR_WIN:
+      status = "WScissors";
+      break;
+    case PICKED:
+      status = "Picked";
+      break;
+    case LOST:
+      status = "LLOST";
+  }
+  return {name, status, countWin}
 }
 
 function toRoomUsersUpdate(room, stats) {
