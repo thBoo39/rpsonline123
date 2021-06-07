@@ -118,15 +118,15 @@ function Room(id) {
   }
 
   this.update = function () {
-    var cName = color(50, 170, 190);
+    var cName = color('lightseagreen');
     this.blinking -= 1;
     for (var i = 0; i < roomUsers.length; i++) {
       var countWin = roomUsers[i].countWin.toString();
       var status = roomUsers[i].status;
       var name = roomUsers[i].name;
-      var c = color(210, 210, 40);
+      var c = color(210, 210, 60);
       if (status.slice(0, 1) === 'L') {
-        c = color(175, 30, 30);
+        c = color("crimson");
         status = status.slice(1);
       } else if (status.slice(0, 1) === 'T') {
         if (this.blinking > 0) {
@@ -146,7 +146,7 @@ function Room(id) {
       }
       switch (status) {
         case "Not Ready":
-          c = color(175, 30, 30);
+          c = color("crimson");
           break;
         case "Ready":
           c = color(30, 175, 30);
