@@ -28,6 +28,7 @@
     }
 
     button {
+      background-color: lightgray;
       margin: auto;
       text-align: center;
       font-size: 50px;
@@ -69,9 +70,9 @@
     </div>
     <div id='button-area' style="display: none;">
       <!-- <button class="join-button"></button> -->
-      <button onclick="requestRock()">Rock </button>
-      <button onclick="requestPaper()">Paper </button>
-      <button onclick="requestScissor()">Scissors</button>
+      <button id="button-rock" onclick="requestRock()">Rock </button>
+      <button id="button-paper" onclick="requestPaper()">Paper </button>
+      <button id="button-scissor" onclick="requestScissor()">Scissors</button>
     </div>
     <div class='container-sketch' id='sketch'></div>
   </div>

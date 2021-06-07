@@ -185,19 +185,22 @@ function handleSuccess(data) {
       room.switchTo(2);
       break;
     case "choice":
-      room.status = data.pick.toUpperCase();
+      changeButtonColor(data.pick);
       break;
     case "room hot":
       clearMsgBox();
+      resetButtonColor();
       room.switchTo(3);
       break;
     case "reset":
       clearMsgBox();
+      resetButtonColor();
       room.switchTo(1);
       break;
     case "tie":
       e = select('#headMsg');
       e.html("Continue!");
+      resetButtonColor();
       room.blinking = 10;
       loop();
       console.log("tie")
@@ -363,5 +366,49 @@ function writeMsg() {
   canvas_bottom.fill(0);
   for (var i = 0; i < msg_bottom.length; i++) {
     canvas_bottom.text(msg_bottom[i], 0, i * SEND_TEXT_SIZE);
+  }
+}
+
+function changeButtonColor(pick) {
+  const br = "#button-rock";
+  const bp = "#button-paper";
+  const bs = "#button-scissor";
+  var e;
+  var eH, eL1, eL2;
+  var col;
+  switch(pick) {
+    case "rock":
+      eH = br;
+      eL1 = bp;
+      eL2 = bs;
+      break;
+    case "paper":
+      eH = bp;
+      eL1 = br;
+      eL2 = bs;
+      break;
+    case "scissor":
+      eH = bs;
+      eL1 = br;
+      eL2 = bp;
+      break;
+  }
+  e = select(eH);
+  col = color("LightYellow");
+  e.style("background-color", col);
+  col = color("lightgray");
+  e = select(eL1);
+  e.style("background-color", col);
+  e = select(eL2);
+  e.style("background-color", col);
+}
+
+function resetButtonColor() {
+  const buttons = ["#button-rock", "#button-paper", "#button-scissor"]
+  var e;
+  const col = color("lightgray");
+  for (var b of buttons) {
+    e = select(b);
+    e.style("background-color", col);
   }
 }
