@@ -38,7 +38,7 @@ const addUser = function (id, name, roomId) {
   } else {
     if (name.length > 12) {name = name.slice(0, 12)};
   }
-  const user = { id: id, name: name, room: room, state: NOT_READY };
+  const user = { id: id, name: name, room: room, state: NOT_READY, countWin: 0 };
   users.push(user);
   return { user };
 }
@@ -96,7 +96,13 @@ const judgeUsers = function (roomUsers) {
   var roomState = "";
   const { rock, paper, scissor } = getCombination(roomUsers);
   if (existTie({ rock, paper, scissor })) {
-    ties = roomUsers.filter( user => (user.state > PICK) && (user.state != LOST))
+    for (var user of roomUsers) {
+      if ((user.state > PICK) && (user.state != LOST)) {
+        user.state += 10;
+        ties.push(user);
+      }
+    }
+    // ties = roomUsers.filter( user => (user.state > PICK) && (user.state != LOST))
     return { winner, losers, ties, roomState };
   }
   if (rock && scissor) {
@@ -157,6 +163,11 @@ const resetRoomUsersState = function (room) {
   return;
 }
 
+const setRoomUsersStateReady = function (room) {
+  setRoomUsersState(room, READY);
+  return;
+}
+
 function setRoomUsersState(room, state) {
   const roomUsers = getUsers(room);
   for (var user of roomUsers) {
@@ -200,6 +211,6 @@ function isNumber(value) {
 
 module.exports = {
   addUser, getUser, removeUser, getUsers,
-  setUserReady, resetRoomUsersState, userMadeChoice,
-  judgeUsers, countUsersChoice
+  setUserReady, resetRoomUsersState, setRoomUsersStateReady, 
+  userMadeChoice, judgeUsers, countUsersChoice
 };

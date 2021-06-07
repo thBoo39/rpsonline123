@@ -83,6 +83,8 @@ function Room(id) {
         e.hide();
         e = select('#button-area');
         e.show();
+        e = select('#button-rematch');
+        e.hide();
         break;
       // Lost
       case 4:
@@ -112,7 +114,9 @@ function Room(id) {
 
   this.update = function () {
     var cName = color(50, 170, 190);
+    this.blinking -= 1;
     for (var i = 0; i < roomUsers.length; i++) {
+      var countWin = roomUsers[i].countWin.toString();
       var status = roomUsers[i].status;
       var name = roomUsers[i].name;
       var c = color(210, 210, 40);
@@ -120,7 +124,16 @@ function Room(id) {
         c = color(175, 30, 30);
         status = status.slice(1);
       } else if (status.slice(0, 1) === 'T') {
-        c = color(210, 210, 40);
+        if (this.blinking > 0) {
+          if (this.blinking % 2) {
+            c = color(40, 40, 210);
+          } else {
+            c = color(210, 210, 40);
+          }
+        } else {
+          c = color(210, 210, 40);
+          noLoop();
+        }
         status = status.slice(1);
       } else if (status.slice(0, 1) === 'W') {
         c = color(30, 175, 30);
@@ -147,7 +160,9 @@ function Room(id) {
       text(name, 0, TEXT_SIZE * (i));
       fill(30);
       textAlign(CENTER);
-      text(status, windowWidth/2, TEXT_SIZE * (i));
+      text(status, windowWidth / 2, TEXT_SIZE * (i));
+      textAlign(RIGHT);
+      text(countWin, windowWidth, TEXT_SIZE * (i));
     }
   }
 }
@@ -174,7 +189,11 @@ function handleSuccess(data) {
       break;
     case "tie":
       e = select('#headMsg');
-      e.html("Continue!")
+      e.html("Continue!");
+      room.blinking = 10;
+      loop();
+      console.log("tie")
+      console.log(room.blinking)
       break;
     case "wait":
       e = select('#headMsg');

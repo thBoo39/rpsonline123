@@ -20,8 +20,8 @@ const express = require("express");
 const app = express();
 const server = app.listen(process.env.PORT || 5000);
 const { addUser, getUser, removeUser, getUsers,
-  setUserReady, resetRoomUsersState, userMadeChoice,
-  judgeUsers, countUsersChoice } = require('./manager');
+  setUserReady, resetRoomUsersState, setRoomUsersStateReady,
+  userMadeChoice, judgeUsers, countUsersChoice } = require('./manager');
 
 var userCounter = 0;
 const MAX_USERS = 5;
@@ -115,7 +115,7 @@ function Connection(socket) {
     // if all room users have made a chocie
     const count = countUsersChoice(roomUsers);
     if (count != roomUsers.length) {
-      socket.emit("success", {id: "wait"});
+      socket.emit("success", { id: "wait" });
       return;
     }
     // There coulbe be a winner, losers, lost users
@@ -127,46 +127,21 @@ function Connection(socket) {
       io.to(loser.id).emit("success", { id: "lost" });
       loser.state = LOST;
     }
+    if (typeof winner != "undefined") {
+      winner.countWin += 1;
+    }
     const stats = roomUsersStatusUpdate(user.room);
     toRoomUsersUpdate(user.room, stats);
     for (var tie of ties) {
       io.to(tie.id).emit("success", { id: "tie" });
     }
-    setUsersPickState(roomUsers);
+    setUsersPickStateUnlessLost(roomUsers);
     if (typeof winner != "undefined") {
       console.log(`Winner is ${winner.name} in ${winner.room}!`)
       io.to(winner.id).emit("success", { id: "win" });
       io.in(user.room).emit("notification", `Winner is ${winner.name}!`);
       io.in(user.room).emit("success", { id: "game over" });
     }
-
-
-    // if (roomState === "tie") {
-    //   io.in(user.room).emit("notification", "All tie!");
-    //   io.in(user.room).emit("success", { id: "tie" });
-    //   const stats = roomUsersStatusUpdate(user.room);
-    //   toRoomUsersUpdate(user.room, stats);
-    //   setUsersPickState(roomUsers);
-    // } else {
-    //   const stats = roomUsersStatusUpdate(user.room);
-    //   toRoomUsersUpdate(user.room, stats);
-    //   for (loser of losers) {
-    //     io.to(loser.id).emit("success", { id: "lost" });
-    //     loser.state = LOST;
-    //   }
-    //   // if tie exist
-    //   if (typeof winner === "undefined") {
-    //     for (var tie of ties) {
-    //       io.to(tie.id).emit("success", { id: "tie" });
-    //     }
-    //     setUsersPickState(roomUsers);
-    //   } else if (typeof winner != "undefined") {
-    //     console.log(`Winner is ${winner.name} in ${winner.room}!`)
-    //     io.to(winner.id).emit("success", { id: "win" });
-    //     io.in(user.room).emit("notification", `Winner is ${winner.name}!`);
-    //     io.in(user.room).emit("success", { id: "game over" });
-    //   }
-    // }
   });
 
   // Rematch request
@@ -174,8 +149,10 @@ function Connection(socket) {
     const user = getUser(socket.id);
     if (typeof user === "undefined") return;
     console.log("Rematch");
-    resetRoomUsersState(user.room);
-    io.in(user.room).emit('success', { id: "reset" });
+    var roomUsers = getUsers(user.room);
+    setUsersPickState(roomUsers);
+    // resetRoomUsersState(user.room);
+    io.in(user.room).emit('success', { id: "room hot" });
     const stats = roomUsersStatusUpdate(user.room);
     toRoomUsersUpdate(user.room, stats);
     socket.in(user.room).emit("notification", `${user.name} requested Rematch!`)
@@ -215,6 +192,7 @@ function roomUsersStatusUpdate(room) {
 function statusUpdate(roomUsers) {
   var usersStats = [];
   for (var user of roomUsers) {
+    var countWin = user.countWin;
     var name = user.name;
     var status = "";
     switch (user.state) {
@@ -269,7 +247,7 @@ function statusUpdate(roomUsers) {
       case LOST:
         status = "LLOST";
     }
-    usersStats.push({ name: name, status: status });
+    usersStats.push({ name: name, status: status, countWin: countWin });
   }
   return usersStats;
 }
@@ -302,16 +280,23 @@ function createPickedState(roomUsers) {
     var name = u.name;
     var room = u.room;
     var state = u.state;
+    var countWin = u.countWin;
     // more than LOST values are ROCK PAPER SCISSOR
     if (u.state > PICK) {
       if (u.state != LOST) state = PICKED;
     }
-    dummyUsers.push({ id: id, name: name, room: room, state: state });
+    dummyUsers.push({ id: id, name: name, room: room, state: state, countWin: countWin });
   }
   return dummyUsers;
 }
 
 function setUsersPickState(roomUsers) {
+  for (var user of roomUsers) {
+    user.state = PICK;
+  }
+}
+
+function setUsersPickStateUnlessLost(roomUsers) {
   for (var user of roomUsers) {
     if (user.state != LOST) user.state = PICK;
   }
