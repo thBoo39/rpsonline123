@@ -61,41 +61,10 @@ const removeUser = function (id) {
   return -1;
 }
 
-const setUserReady = function (id) {
-  const user = getUser(id);
-  if (user.state > READY) return { roomState: "Locked" };
-  const roomUsers = getUsers(user.room);
-  var roomState = "";
-  if (roomUsers.length == 1) return { roomState: "alone" };
-  if (user.state === READY) return { roomState: 'no state change' };
-  user.state = READY;
-  // if all users are ready, room is hot
-  const readyCount = roomUsers.filter(user => user.state === READY).length;
-  const roomUsersCount = roomUsers.length;
-  if (readyCount === roomUsersCount) {
-    roomState = 'hot';
-  } else {
-    roomState = 'cold';
-  }
-  return { user, roomState };
-}
-
-const userMadeChoice = function (id, choice) {
-  const user = getUser(id);
-  var err = "";
-  if (user.state != choice) {
-    user.state = choice;
-  } else {
-    err = 'no state change';
-  }
-  return { user, err };
-}
-
 const judgeUsers = function (roomUsers) {
   var winner = undefined;
   var losers = [];
   var ties = [];
-  var roomState = "";
   const { rock, paper, scissor } = getCombination(roomUsers);
   if (existTie({ rock, paper, scissor })) {
     for (var user of roomUsers) {
@@ -105,7 +74,7 @@ const judgeUsers = function (roomUsers) {
       }
     }
     // ties = roomUsers.filter( user => (user.state > PICK) && (user.state != LOST))
-    return { winner, losers, ties, roomState };
+    return { winner, losers, ties };
   }
   if (rock && scissor) {
     ties = roomUsers.filter(user => user.state === ROCK);
@@ -152,31 +121,6 @@ function countLostRoomUsers(roomUsers) {
   return (roomUsers.filter(user => user.state === LOST).length);
 }
 
-const countUsersChoice = function (roomUsers) {
-  var count = 0;
-  for (user of roomUsers) {
-    if (user.state > PICK) count += 1;
-  }
-  return count;
-}
-
-const resetRoomUsersState = function (room) {
-  setRoomUsersState(room, NOT_READY);
-  return;
-}
-
-const setRoomUsersStateReady = function (room) {
-  setRoomUsersState(room, READY);
-  return;
-}
-
-function setRoomUsersState(room, state) {
-  const roomUsers = getUsers(room);
-  for (var user of roomUsers) {
-    user.state = state;
-  }
-}
-
 function isValidRoomId(id) {
   if (!isNumber(id)) return false;
   return (id > 0 && id < MAX_ROOMS);
@@ -212,7 +156,5 @@ function isNumber(value) {
 
 
 module.exports = {
-  addUser, getUser, removeUser, getUsers,
-  setUserReady, resetRoomUsersState, setRoomUsersStateReady, 
-  userMadeChoice, judgeUsers, countUsersChoice
+  addUser, getUser, removeUser, getUsers, judgeUsers
 };

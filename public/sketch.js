@@ -10,9 +10,11 @@ var roomUsers = [];
 
 function setup() {
   // top canvas for users stats
+  const cbHeight = SEND_TEXT_SIZE * 5;
+  const cHeight = cbHeight + TEXT_SIZE * 5;
+  const canvas = createCanvas(windowWidth, cHeight);
   // bottom canvas for message
-  const canvas = createCanvas(windowWidth, TEXT_SIZE * 9);
-  canvas_bottom = createGraphics(windowWidth, TEXT_SIZE * 4)
+  canvas_bottom = createGraphics(windowWidth, cbHeight);
   // add hit enter function to input form
   // canvas.style('display', 'block');
   console.log("client run")
@@ -32,12 +34,15 @@ function setup() {
   textAlign(LEFT, TOP);
   canvas_bottom.textSize(SEND_TEXT_SIZE);
   canvas_bottom.textAlign(LEFT, TOP);
+  // can do this without creating an object
   room = new Room();
+  // add initial messages
   addToMsgBox("Welcome to Rock Paper Scissors online!");
   addToMsgBox("Human vs Human up to 5 people");
   addToMsgBox("Have the shared room number 1 - 99999 ready!")
   addToMsgBox("")
   addToMsgBox("Enjoy!")
+
   noLoop();
 }
 
@@ -48,12 +53,10 @@ function Room(id) {
   this.user = "";
   this.err = false;
 
-  this.leftBuf = 30;
-  this.topBuf = 30;
-
   this.switchTo = function (stage) {
     if (this.stage === stage) return;
     this.stage = stage;
+    // e .. element
     var e;
     switch (this.stage) {
       // Click when Ready
@@ -99,12 +102,14 @@ function Room(id) {
         e.hide();
         addToMsgBox("Wait for winner to rematch!");
         break;
+      // Win
       case 5:
         e = select('#headMsg');
         e.html("You WIN!")
         e = select('#button-area');
         e.hide();
         break;
+      // Rematch
       case 6:
         e = select('#button-rematch');
         e.show();
@@ -118,8 +123,9 @@ function Room(id) {
   }
 
   this.update = function () {
-    var cName = color('lightseagreen');
-    this.blinking -= 1;
+    var cName = color('yellow');
+    // binking screen effect when tie
+    if (this.blinking > 0) this.blinking -= 1;
     for (var i = 0; i < roomUsers.length; i++) {
       var countWin = roomUsers[i].countWin.toString();
       var status = roomUsers[i].status;
@@ -155,6 +161,7 @@ function Room(id) {
           c = color(210, 210, 40);
           break;
       }
+      // Draw users status on canvas
       name = name + "  ";
       fill(c);
       rect(0, TEXT_SIZE * (i), windowWidth, TEXT_SIZE);
@@ -167,7 +174,7 @@ function Room(id) {
       textAlign(CENTER);
       text(status, windowWidth / 2, TEXT_SIZE * (i));
       textAlign(RIGHT);
-      text(countWin, windowWidth, TEXT_SIZE * (i));
+      text(countWin, windowWidth-20, TEXT_SIZE * (i));
     }
   }
 }
@@ -306,7 +313,6 @@ function draw() {
   room.draw();
   writeMsg();
   image(canvas_bottom, 0, TEXT_SIZE * 5);
-  // ellipse(mouseX, mouseY, 30, 30);
 }
 
 function keyReleased() {
@@ -329,7 +335,7 @@ function handleError(id) {
       msg = "Overcrowded. Try it again later.";
       break;
     case "invalid room id":
-      msg = "Only numbers 1 - 1000";
+      msg = "Only numbers 1 - 99999";
       break;
     case "room occupied":
       msg = "This room is occupied. Try others";

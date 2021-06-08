@@ -19,12 +19,8 @@ const LOST = 30;
 const express = require("express");
 const app = express();
 const server = app.listen(process.env.PORT || 5000);
-const { addUser, getUser, removeUser, getUsers,
-  setUserReady, resetRoomUsersState, setRoomUsersStateReady,
-  userMadeChoice, judgeUsers, countUsersChoice } = require('./manager');
+const { addUser, getUser, removeUser, getUsers, judgeUsers } = require('./manager');
 
-var userCounter = 0;
-const MAX_USERS = 5;
 app.use(express.static('public'));
 
 console.log("Server is running ");
@@ -32,13 +28,13 @@ console.log("Server is running ");
 const socket = require("socket.io");
 const io = socket(server);
 
+var userCounter = 0;
 io.sockets.on("connection", Connection);
 
 function Connection(socket) {
   userCounter += 1;
   console.log(`New connection: ${userCounter}`);
 
-  // Client enter room Id
   // If room does not exist, create a room. Create a username and add it to the room
   socket.on("requestJoinRoom", function (name, roomId) {
     console.log(`request Join Room ${roomId} from ${socket.id}`);
@@ -66,18 +62,27 @@ function Connection(socket) {
           socket.emit("error", "name taken");
       }
     } else {
+      // if success, add the use to the room
       socket.join(user.room);
-      socket.in(user.room).emit('notification', `User ${user.name} joined!`);
+      // send User joined message to everyone in the room except for the user who just joined
+      socket.to(user.room).emit('notification', `User ${user.name} joined!`);
+      // server takes care of name and room name for the client who joined
+      // in case the error occurs
       socket.emit("success", { id: "join room", name: user.room, user: user.name });
+      // stats are client side specific users format
+      // server does not send all the users data as is
       const stats = roomUsersStatusUpdate(user.room);
-      toRoomUsersUpdate(user.room, stats);
+      // package stats and send all room users the package
+      sendStatsToRoom(user.room, stats);
       console.log(`User ${user.name} added to ${user.room}`);
     }
   });
   // Client ready
   socket.on('requestReady', function () {
-    if (!isUserValid(socket.id)) return;
-    const { user, roomState } = setUserReady(socket.id);
+    const user = getUser(socket.id);
+    if (!user) return;
+    // if (!isUserValid(socket.id)) return;
+    const { roomState } = setUserReady(user);
     if (roomState === 'alone') {
       socket.emit("error", "alone");
       return;
@@ -90,47 +95,50 @@ function Connection(socket) {
       const roomUsers = getUsers(user.room);
       setUsersPickState(roomUsers);
     }
-    socket.in(user.room).emit('notification', `User ${user.name} is READY!`);
+    socket.to(user.room).emit('notification', `User ${user.name} is READY!`);
     const stats = roomUsersStatusUpdate(user.room);
-    toRoomUsersUpdate(user.room, stats);
-    socket.emit("success", { id: "user ready" });
+    sendStatsToRoom(user.room, stats);
     if (roomState === "hot") {
       io.in(user.room).emit('success', { id: 'room hot' });
       io.in(user.room).emit('notification', "Room is hot! Ready to rock paper scissors!");
+    } else {
+      socket.emit("success", { id: "user ready" });
     }
   });
   // User made a choice
   socket.on('requestChoice', function (pick) {
-    if (!isUserValid(socket.id)) return;
-    const choice = getChoice(pick);
-    if (typeof choice === "undefined") return;
-    const { user, err } = userMadeChoice(socket.id, choice);
+    const user = getUser(socket.id);
+    if (!user) return;
+    // if (!isUserValid(socket.id)) return;
+    const state = getState(pick);
+    if (typeof state === "undefined") return;
+    const { err } = setUserState(user, state);
     if (err === 'no state change') return;
-    socket.in(user.room).emit('notification', `${user.name} made a choice`);
-    socket.emit("success", {id: "choice", pick: pick});
-    const roomUsers = getUsers(user.room);
+    socket.to(user.room).emit('notification', `${user.name} made a choice`);
+    socket.emit("success", { id: "choice", pick: pick });
     // hide users choice by replacing with Picked
+    const roomUsers = getUsers(user.room);
     dummyUsers = createPickedState(roomUsers);
     const dummyStats = statusUpdate(dummyUsers);
     var msgData = { id: "user update", users: dummyStats };
-    socket.in(user.room).emit("success", msgData);
+    socket.to(user.room).emit("success", msgData);
     // for those requested, show its own choice
     for (var dUser of dummyStats) {
       if (dUser.name === user.name) {
-        var { name, status, countWin} = setStatus(user)
+        var { name, status, countWin } = setStatus(user)
         dUser.status = status;
       }
     }
     msgData = { id: "user update", users: dummyStats };
     socket.emit("success", msgData);
-    // if all room users have made a chocie
+    // check if all room users have made a chocie
     const count = countUsersChoice(roomUsers);
     if (count != roomUsers.length) {
       socket.emit("success", { id: "wait" });
       return;
     }
     // There coulbe be a winner, losers, lost users
-    const { winner, losers, ties, roomState } = judgeUsers(roomUsers);
+    const { winner, losers, ties } = judgeUsers(roomUsers);
     // if no winner, game continue
     // losers get notified
     // ties get notified
@@ -138,7 +146,7 @@ function Connection(socket) {
       winner.countWin += 1;
     }
     const stats = roomUsersStatusUpdate(user.room);
-    toRoomUsersUpdate(user.room, stats);
+    sendStatsToRoom(user.room, stats);
     for (var loser of losers) {
       io.to(loser.id).emit("success", { id: "lost" });
       loser.state = LOST;
@@ -162,11 +170,10 @@ function Connection(socket) {
     console.log("Rematch");
     var roomUsers = getUsers(user.room);
     setUsersPickState(roomUsers);
-    // resetRoomUsersState(user.room);
     io.in(user.room).emit('success', { id: "room hot" });
     const stats = roomUsersStatusUpdate(user.room);
-    toRoomUsersUpdate(user.room, stats);
-    socket.in(user.room).emit("notification", `${user.name} requested Rematch!`)
+    sendStatsToRoom(user.room, stats);
+    socket.to(user.room).emit("notification", `${user.name} requested Rematch!`)
   });
 
   // Disconnection
@@ -179,11 +186,11 @@ function Connection(socket) {
       if (user.state >= PICK && user.state != LOST) {
         console.log("Reset")
         resetRoomUsersState(user.room);
-        socket.in(user.room).emit('success', { id: "reset" });
+        socket.to(user.room).emit('success', { id: "reset" });
       }
       const stats = roomUsersStatusUpdate(user.room);
-      toRoomUsersUpdate(user.room, stats);
-      socket.in(user.room).emit('notification', `${user.name} left the room`);
+      sendStatsToRoom(user.room, stats);
+      socket.to(user.room).emit('notification', `${user.name} left the room`);
     }
   });
 
@@ -203,7 +210,7 @@ function roomUsersStatusUpdate(room) {
 function statusUpdate(roomUsers) {
   var usersStats = [];
   for (var user of roomUsers) {
-    var { name, status, countWin} = setStatus(user);
+    var { name, status, countWin } = setStatus(user);
     usersStats.push({ name: name, status: status, countWin: countWin });
   }
   return usersStats;
@@ -265,20 +272,21 @@ function setStatus(user) {
     case LOST:
       status = "LLOST";
   }
-  return {name, status, countWin}
+  return { name, status, countWin }
 }
 
-function toRoomUsersUpdate(room, stats) {
+function sendStatsToRoom(room, stats) {
   const msgData = { id: "user update", users: stats };
   io.in(room).emit("success", msgData);
 }
 
 // if server went down unexpectedly, server lose client info, causing crash.
 function isUserValid(socketId) {
-  return (typeof getUser(socketId) === "undefined") ? false : true;
+  var user = getUser(socketId);
+  return (typeof user === "undefined") ? false : user;
 }
 
-function getChoice(pick) {
+function getState(pick) {
   if (pick === 'rock') {
     return ROCK;
   } else if (pick === 'paper') {
@@ -318,9 +326,52 @@ function setUsersPickStateUnlessLost(roomUsers) {
   }
 }
 
-function setUsersState(roomUsers, id) {
-  for (var user of roomUsers) {
+function setUserState(user, choice) {
+  var err = "";
+  if (user.state != choice) {
+    user.state = choice;
+  } else {
+    err = 'no state change';
+  }
+  return { user, err };
+}
 
-    user.state = id;
+function countUsersChoice (roomUsers) {
+  var count = 0;
+  for (user of roomUsers) {
+    if (user.state > PICK) count += 1;
+  }
+  return count;
+}
+
+const setUserReady = function (user) {
+  // const user = getUser(id);
+  if (user.state > READY) return { roomState: "Locked" };
+  const roomUsers = getUsers(user.room);
+  var roomState = "";
+  if (roomUsers.length == 1) return { roomState: "alone" };
+  if (user.state === READY) return { roomState: 'no state change' };
+  user.state = READY;
+  // if all users are ready, room is hot
+  const readyCount = roomUsers.filter(user => user.state === READY).length;
+  const roomUsersCount = roomUsers.length;
+  if (readyCount === roomUsersCount) {
+    roomState = 'hot';
+  } else {
+    roomState = 'cold';
+  }
+  return { roomState };
+}
+
+const resetRoomUsersState = function (room) {
+  setRoomUsersState(room, NOT_READY);
+  return;
+}
+
+function setRoomUsersState(room, state) {
+  const roomUsers = getUsers(room);
+  for (var user of roomUsers) {
+    user.state = state;
   }
 }
+
