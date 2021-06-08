@@ -7,19 +7,25 @@ Rock Paper Scissors online with chat. You can play rock paper scissors games wit
 
 Choose the room number shared with your friends. You can choose a number from 1 to 99999. Use name to recognize your friends easily. In app chat is helpful, too. There is a chance stranger in the room. But, hey, this is rock paper scissors. Have fun. Or simply refresh the page to leave the room.
 
-## Requires and Tested on
+## To run locally...
+Requires Node.js. Tested with Node.js V14.17.0 on Windows machines. Once Node.js is installed on the machine, cd to the folder containing the repo, 
+
+```
+node server.js
+```
+Open the web browser, type "localhost:5000". That's it.
+
+Express and Socket.IO are in the node_modules folder.
+p5.js is linked to CDN site. Unless otherwise, you do not need to download it.
+
+## Requires
 **Server side**
 - Node.js 14.17.0
 - Express 4.17.1
 - Socket.IO 4.1.2
 
 **Client side**
-
-p5.js is linked to CDN site. Unless otherwise, you do not need to download it.
 - p5.js 1.3.1
-
-## How to run
-node server.js
 
 ## Game Rules
 Room must be at least 2 users in the room, and up to 5 users. Once users in the room are ready, lock the room. Nobody else can enter the room.
