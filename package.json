@@ -1,7 +1,7 @@
 {
-  "name": "matter-on-web",
+  "name": "rpsonline12",
   "version": "1.0.0",
-  "description": "matter on web",
+  "description": "RPSOnline123",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,10 +12,10 @@
     "node",
     "express"
   ],
-  "author": "Toshi",
+  "author": "ToshiHonda",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "socket.io": "^4.5.1"
   }
 }
