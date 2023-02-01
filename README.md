@@ -3,7 +3,7 @@
 ## About
 Rock Paper Scissors online with chat. You can play rock paper scissors games with up to 5 people locally or online from all over the world! There is a chat function if you like.
 
-[Try it here](https://rpsonline123.herokuapp.com/)... (as far as I haven't changed it). If you don't have friends available right away, open two tabs on your browser and test it. Or you can of course deploy it with node app locally. Port is 5000 in default.
+[Try it here](https://rpsonline123.azurewebsites.net/)... (as far as I haven't changed it). If you don't have friends available right away, open two tabs on your browser and test it. Or you can of course deploy it with node app locally. Port is 5000 in default.
 
 Choose the room number shared with your friends. You can choose a number from 1 to 99999. Use name to recognize your friends easily. In app chat is helpful, too. There is a chance stranger in the room. But, hey, this is rock paper scissors. Have fun. Or simply refresh the page to leave the room.
 
@@ -21,8 +21,9 @@ p5.js is linked to CDN site. Unless otherwise, you do not need to download it.
 ## Requires
 **Server side**
 - Node.js 14.17.0
-- Express 4.17.1
-- Socket.IO 4.1.2
+- Express 4.18.2
+- Socket.IO 4.5.1
+- Mocha 10.2.0
 
 **Client side**
 - p5.js 1.3.1
