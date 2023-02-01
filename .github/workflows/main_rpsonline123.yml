@@ -54,5 +54,5 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C45DECCE256D4040955B83ACDE97808A }}
           package: .
-runs:
-  using: 'node16'
+  runs:
+    using: 'node16'
