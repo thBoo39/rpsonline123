@@ -22,7 +22,7 @@ function setup() {
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
     webAddr = "http://localhost:5000";
   } else {
-    webAddr = "https://rpsonline123.herokuapp.com/";
+    webAddr = "https://rpsonline123.azurewebsites.net/";
   }
   socket = io.connect(webAddr);
   socket.on("error", handleError);
