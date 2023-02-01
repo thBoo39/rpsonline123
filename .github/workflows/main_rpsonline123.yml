@@ -56,3 +56,4 @@ jobs:
           package: .
   runs:
     using: 'node16'
+    main: 'server.js'
