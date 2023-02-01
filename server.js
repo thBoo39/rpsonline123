@@ -131,13 +131,13 @@ function Connection(socket) {
     }
     msgData = { id: "user update", users: dummyStats };
     socket.emit("success", msgData);
-    // check if all room users have made a chocie
+    // check if all room users have made a choice
     const count = countUsersChoice(roomUsers);
     if (count != roomUsers.length) {
       socket.emit("success", { id: "wait" });
       return;
     }
-    // There coulbe be a winner, losers, lost users
+    // There could be a winner, losers, lost users
     const { winner, losers, ties } = judgeUsers(roomUsers);
     // if no winner, game continue
     // losers get notified
