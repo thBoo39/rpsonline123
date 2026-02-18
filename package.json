@@ -14,7 +14,7 @@
   "author": "ToshiHonda",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "mocha": "^10.8.2",
     "socket.io": "^4.8.1"
   }
